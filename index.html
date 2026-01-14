@@ -1,0 +1,857 @@
+<title>Peaceful Valley Farm</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+<style>
+.plot {
+  position: relative;
+  transition: all 0.3s;
+  color: #1f2937; /* Dark gray/almost black color */
+  min-height: 8rem;
+}
+
+/* Add to existing CSS */
+.draggable-window {
+  position: absolute;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  min-width: 300px;
+  z-index: 1000;
+}
+
+.window-header {
+  padding: 8px;
+  background: #f3f4f6;
+  border-radius: 8px 8px 0 0;
+  cursor: move;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.window-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.window-control {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+.minimize { background: #fbbf24; }
+.maximize { background: #34d399; }
+.close { background: #ef4444; }
+
+.window-content {
+  padding: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.window-minimized {
+  height: 40px;
+  overflow: hidden;
+}
+
+
+.patch-notes {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 400px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+
+.speech-bubble {
+  position: fixed;
+  bottom: 160px;
+  left: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  width: 300px; /* Updated width */
+  max-width: 300px; /* Ensured maximum width */
+  font-size: 14px; /* Updated font size */
+  line-height: 1.4; /* Updated line height */
+  z-index: 9999; /* Increased z-index to ensure it's above other elements */
+  display: none; /* Hidden by default */
+}
+
+.pro-tip {
+  margin-top: 8px;
+  padding: 8px;
+  background: #f0fff4;
+  border-left: 3px solid #22c55e;
+  border-radius: 4px;
+}
+
+.hotkey {
+  display: inline-block;
+  background: #e5e7eb;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  margin: 0 2px;
+}
+
+.speech-bubble:after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50px;
+  border-width: 10px 10px 0;
+  border-style: solid;
+  border-color: white transparent;
+}
+
+.mascot-container {
+  cursor: pointer;
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 9999; /* Match speech bubble z-index */
+  pointer-events: all; /* Ensure it's always accessible */
+}
+
+.mascot {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 120px;
+  height: 120px;
+  z-index: 9999; /* Match speech bubble z-index */
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.mascot:hover {
+  transform: scale(1.1);
+  filter: brightness(1.1); /* Added brightness effect */
+  transition: all 0.3s ease;
+}
+
+.growth-bar {
+  position: absolute; 
+  bottom: 0;
+  left: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  transition: width 0.3s;
+}
+
+.buff-icon {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 20px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.weather-effect {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.rain {
+  background: linear-gradient(to bottom, transparent 0%, rgba(0,0,200,0.1) 100%);
+  animation: rain 1s linear infinite;
+}
+
+@keyframes rain {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+.tooltip {
+  position: absolute;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 5px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.plot:hover .tooltip {
+  opacity: 1;
+}
+
+.planting-menu {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.planting-menu button {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+@keyframes blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
+.mascot .eyes {
+  animation: blink 4s infinite;
+  transform-origin: center;
+}
+</style>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-blue-50">
+
+<div class="mascot-container">
+    <div class="speech-bubble animate__animated animate__fadeIn">
+      <h3 class="font-bold mb-2">Welcome to Peaceful Valley Farm v1.1.2! 🌱</h3>
+      <p class="mb-2">Here's how to play:</p>
+      <ul class="list-disc pl-4 space-y-1 mb-3">
+        <li>Click empty plots to plant seeds</li>
+        <li>Buy seeds from the shop</li>
+        <li>Harvest crops when ready</li>
+        <li>Use power-ups to boost growth</li>
+      </ul>
+      <div class="pro-tip mb-3">
+        <strong>Pro Tips:</strong>
+        <ul class="list-disc pl-4 mt-1">
+          <li>Press <span class="hotkey">H</span> to toggle help menu</li>
+          <li>Press <span class="hotkey">P</span> to show patch notes</li>
+          <li>Press <span class="hotkey">Esc</span> to close menus</li>
+          <li>Rain increases growth speed by 5%</li>
+          <li>Stack buffs for maximum profit!</li>
+        </ul>
+      </div>
+      <button class="close-tutorial text-sm text-gray-500 hover:text-gray-700">
+        Click to close (or press H)
+      </button>
+    </div>
+
+  
+  <div class="mascot">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="100" cy="100" r="90" fill="#FFD700"/>
+      <circle cx="100" cy="100" r="70" fill="#90EE90"/>
+      <g class="eyes">
+        <circle cx="70" cy="80" r="20" fill="white"/>
+        <circle cx="70" cy="80" r="10" fill="black"/>
+        <circle cx="65" cy="75" r="5" fill="white"/>
+        <circle cx="130" cy="80" r="20" fill="white"/>
+        <circle cx="130" cy="80" r="10" fill="black"/>
+        <circle cx="125" cy="75" r="5" fill="white"/>
+      </g>
+      <path d="M 70 120 Q 100 140 130 120" stroke="#006400" stroke-width="4" fill="none"/>
+    </svg>
+  </div>
+</div>
+
+<div id="game" class="flex min-h-screen">
+  <div class="flex-1 p-6">
+    <div class="mb-4">
+      <h1 class="text-3xl font-bold text-green-800 mb-2">🌾 Peaceful Valley Farm</h1>
+      
+      <div class="flex gap-4 mb-4">
+        <div class="bg-white p-4 rounded-lg shadow-md">
+          <span class="text-lg">💰 Money: $<span id="moneyDisplay">100</span></span>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow-md">
+          <span class="text-lg">🌱 Level: <span id="levelDisplay">1</span></span>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow-md">
+          <span class="text-lg">⭐ XP: <span id="xpDisplay">0</span>/100</span>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow-md">
+          <span class="text-lg">🎯 Active Buffs: <span id="buffsDisplay">None</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="farmGrid" class="grid grid-cols-4 gap-4"></div>
+  </div>
+
+  <div class="w-96 bg-white shadow-lg p-6 overflow-y-auto">
+    <div class="mb-6">
+      <h2 class="text-xl font-bold mb-3">🎒 Inventory</h2>
+      <div id="inventory" class="grid grid-cols-2 gap-2"></div>
+    </div>
+
+    <div class="mb-6">
+      <h2 class="text-xl font-bold mb-3">🏪 Shop</h2>
+      <div class="grid gap-3" id="shopItems"></div>
+    </div>
+
+    <div class="mb-6">
+      <h2 class="text-xl font-bold mb-3">⚡ Power-ups</h2>
+      <div class="grid gap-2" id="powerups">
+        <button onclick="buyBuff('growth')" class="bg-purple-500 text-white p-2 rounded hover:bg-purple-600 transition-colors">
+          Buy Growth Buff ($30)
+        </button>
+        <button onclick="buyBuff('value')" class="bg-purple-500 text-white p-2 rounded hover:bg-purple-600 transition-colors">
+          Buy Value Buff ($40)
+        </button>
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <h2 class="text-xl font-bold mb-3">🌤️ Weather</h2>
+      <div id="weather" class="p-3 bg-blue-50 rounded-lg"></div>
+    </div>
+
+    <div class="mb-6">
+      <h2 class="text-xl font-bold mb-3">🏆 Recent Achievements</h2>
+      <div id="achievements" class="h-32 overflow-y-auto bg-gray-50 rounded-lg p-3"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = {
+  money: 100,
+  level: 1,
+  xp: 0,
+  inventory: {},
+  plots: [],
+  weather: 'sunny',
+  achievements: [],
+  activeBuffs: [],
+  crops: {
+    carrot: {
+      name: 'Carrot',
+      seedPrice: 5,
+      sellPrice: 12,
+      growthTime: 20,
+      xp: 10,
+      icon: '🥕',
+      currentBuff: 1
+    },
+    tomato: {
+      name: 'Tomato',
+      seedPrice: 10,
+      sellPrice: 25,
+      growthTime: 30,
+      xp: 20,
+      icon: '🍅',
+      currentBuff: 1
+    },
+    strawberry: {
+      name: 'Strawberry',
+      seedPrice: 15,
+      sellPrice: 35,
+      growthTime: 40,
+      xp: 30,
+      icon: '🍓',
+      currentBuff: 1
+    },
+    eggplant: {
+      name: 'Eggplant',
+      seedPrice: 20,
+      sellPrice: 45,
+      growthTime: 50,
+      xp: 40,
+      icon: '🍆',
+      currentBuff: 1
+    }
+  },
+  buffs: {
+    growth: {
+      name: 'Growth Boost',
+      duration: 60000,
+      multiplier: 1.5,
+      cost: 30
+    },
+    value: {
+      name: 'Value Boost',
+      duration: 60000,
+      multiplier: 1.5,
+      cost: 40
+    }
+  }
+};
+
+
+function showPatchNotes() {
+
+  const existingPatchNotes = document.querySelector('.patch-notes');
+  if (existingPatchNotes) {
+    existingPatchNotes.remove();
+    return;
+  }
+
+  const patchNotes = `
+
+    <h3 class="font-bold mb-2">🎮 Patch v1.1.2</h3>
+    
+
+    <h4 class="font-bold mt-4">🛠️ Latest Hotfix (1.1.2):</h4>
+    <ul class="list-disc pl-4">
+
+      <li>Fixed patch notes display and visibility</li>
+      <li>Improved patch notes toggle functionality</li>
+      <li>Enhanced window management system</li>
+      <li>Fixed hotkey responsiveness</li>
+      <li>Updated tutorial content</li>
+    </ul>
+
+    <h4 class="font-bold mt-4">✨ New Features:</h4>
+    <ul class="list-disc pl-4">
+
+      <li>Enhanced window management system</li>
+      <li>Improved draggable windows</li>
+      <li>Better patch notes visibility</li>
+    </ul>
+
+    <h4 class="font-bold mt-4">🎯 Controls:</h4>
+    <ul class="list-disc pl-4">
+      <li>Press H - Toggle Help Menu</li>
+      <li>Press P - Toggle Patch Notes</li>
+      <li>Press Esc - Close Active Windows</li>
+      <li>Click and drag window headers to move</li>
+    </ul>
+
+    <h4 class="font-bold mt-4">🐛 Recent Bug Fixes:</h4>
+    <ul class="list-disc pl-4">
+      <li>Fixed hotkey responsiveness</li>
+      <li>Fixed patch notes display issues</li>
+      <li>Improved plot menu interaction</li>
+    </ul>
+
+    <h4 class="font-bold mt-4">🐛 Bug Fixes:</h4>
+    <ul class="list-disc pl-4">
+      <li>Fixed inventory overlap issues</li>
+      <li>Fixed plot menu closing behavior</li>
+      <li>Improved planting menu visibility</li>
+      <li>Fixed plot text contrast</li>
+    </ul>
+
+    <h4 class="font-bold mt-4">💡 Improvements:</h4>
+    <ul class="list-disc pl-4">
+      <li>Enhanced window management</li>
+      <li>Improved UI responsiveness</li>
+      <li>Better menu organization</li>
+    </ul>
+  `;
+
+
+    const patchNotesWindow = createDraggableWindow('Patch Notes v1.1.2', patchNotes, 'patch-notes');
+
+  document.body.appendChild(patchNotesWindow);
+}
+
+function updateDisplay() {
+  document.getElementById('moneyDisplay').textContent = state.money;
+  document.getElementById('levelDisplay').textContent = state.level;
+  document.getElementById('xpDisplay').textContent = state.xp;
+  document.getElementById('buffsDisplay').textContent = state.activeBuffs.length > 0 ? 
+    state.activeBuffs.map(buff => state.buffs[buff].name).join(', ') : 'None';
+
+  state.plots.forEach((plot, index) => {
+    const plotEl = document.getElementById('farmGrid').children[index];
+    const contents = plotEl.querySelector('.plot');
+    const growthBar = plotEl.querySelector('.growth-bar');
+
+    if (plot.status === 'empty') {
+      contents.innerHTML = `
+        <div class="text-2xl mb-2">🌱</div>
+        <div class="text-sm text-center">Empty Plot</div>
+      `;
+      growthBar.style.width = '0%';
+    } else {
+      const crop = state.crops[plot.type];
+      contents.innerHTML = `
+        <div class="text-2xl mb-2">${crop.icon}</div>
+        <div class="text-sm text-center">${crop.name}</div>
+        <div class="text-xs">${Math.min(100, plot.growth)}%</div>
+      `;
+      growthBar.style.width = `${Math.min(100, plot.growth)}%`;
+    }
+  });
+
+  const inventoryEl = document.getElementById('inventory');
+  inventoryEl.innerHTML = Object.entries(state.inventory)
+    .filter(([_, count]) => count > 0)
+    .map(([cropId, count]) => `
+      <div class="bg-gray-50 p-2 rounded-lg flex items-center">
+        <span class="text-xl mr-2">${state.crops[cropId].icon}</span>
+        <span>${state.crops[cropId].name}: ${count}</span>
+      </div>
+    `).join('');
+}
+
+function initializeFarm() {
+  const farmGrid = document.getElementById('farmGrid');
+  for (let i = 0; i < 16; i++) {
+    const plot = document.createElement('div');
+    plot.className = 'h-32 bg-brown-600 rounded-lg shadow-md transition-all duration-300 cursor-pointer hover:shadow-lg relative overflow-hidden';
+    plot.onclick = () => handlePlotClick(i);
+    
+    const contents = document.createElement('div');
+    contents.className = 'absolute inset-0 flex flex-col items-center justify-center plot';
+    contents.innerHTML = `
+      <div class="text-2xl mb-2">🌱</div>
+      <div class="text-sm text-center">Empty Plot</div>
+    `;
+    plot.appendChild(contents);
+    
+    const growthBar = document.createElement('div');
+    growthBar.className = 'growth-bar';
+    plot.appendChild(growthBar);
+
+    farmGrid.appendChild(plot);
+    state.plots.push({ status: 'empty', growth: 0 });
+  }
+}
+
+function initializeShop() {
+  const shopItems = document.getElementById('shopItems');
+  Object.entries(state.crops).forEach(([cropId, crop]) => {
+    const item = document.createElement('div');
+    item.className = 'bg-gray-50 p-3 rounded-lg flex items-center justify-between';
+    item.innerHTML = `
+      <div>
+        <span class="text-2xl mr-2">${crop.icon}</span>
+        <span class="font-medium">${crop.name} Seeds</span>
+      </div>
+      <button
+        onclick="buySeed('${cropId}')"
+        class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition-colors"
+      >
+        Buy ($${crop.seedPrice})
+      </button>
+    `;
+    shopItems.appendChild(item);
+  });
+}
+
+function levelUp() {
+  state.level++;
+  state.xp = 0;
+  addAchievement(`Level up! Now level ${state.level} 🎉`);
+}
+
+function addAchievement(message) {
+  const achievementsEl = document.getElementById('achievements');
+  const achievement = document.createElement('div');
+  achievement.className = 'mb-2 animate__animated animate__fadeIn';
+  achievement.textContent = message;
+  achievementsEl.insertBefore(achievement, achievementsEl.firstChild);
+}
+
+function showNotification(message) {
+  const notification = document.createElement('div');
+  notification.className = 'fixed top-4 right-4 bg-white shadow-lg rounded-lg p-4 animate__animated animate__fadeIn';
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  setTimeout(() => {
+    notification.classList.remove('animate__fadeIn');
+    notification.classList.add('animate__fadeOut');
+    setTimeout(() => notification.remove(), 1000);
+  }, 2000);
+}
+
+function initializeWeatherSystem() {
+  const weatherEl = document.getElementById('weather');
+  const weathers = ['☀️ Sunny', '🌧️ Rainy', '⛅ Cloudy'];
+  
+  function updateWeather() {
+    const newWeather = weathers[Math.floor(Math.random() * weathers.length)];
+    weatherEl.innerHTML = `<div class="text-lg">${newWeather}</div>`;
+    
+    if (newWeather.includes('Rainy')) {
+      addAchievement('Rain is helping crops grow faster! 🌧️');
+      state.plots.forEach(plot => {
+        if (plot.status === 'growing') {
+          plot.growth += 5;
+        }
+      });
+      updateDisplay();
+    }
+  }
+  
+  updateWeather();
+  setInterval(updateWeather, 30000);
+}
+
+function gameLoop() {
+  state.plots.forEach((plot, index) => {
+    if (plot.status === 'growing') {
+      const growthMultiplier = state.activeBuffs.includes('growth') ? state.buffs.growth.multiplier : 1;
+      plot.growth += 0.5 * growthMultiplier;
+      
+      if (plot.growth >= 100) {
+        plot.status = 'ready';
+        addAchievement(`A ${state.crops[plot.type].name} is ready to harvest! 🌟`);
+      }
+    }
+  });
+
+  if (state.xp >= 100) {
+    levelUp();
+  }
+
+  updateDisplay();
+}
+
+function startGameLoop() {
+  setInterval(gameLoop, 500);
+}
+
+function buyBuff(buffType) {
+  const buff = state.buffs[buffType];
+  if (state.money >= buff.cost) {
+    state.money -= buff.cost;
+    state.activeBuffs.push(buffType);
+    showNotification(`${buff.name} activated!`);
+    
+    setTimeout(() => {
+      state.activeBuffs = state.activeBuffs.filter(b => b !== buffType);
+      showNotification(`${buff.name} has worn off`);
+      updateDisplay();
+    }, buff.duration);
+    
+    updateDisplay();
+  } else {
+    showNotification("Not enough money!");
+  }
+}
+
+function buySeed(cropId) {
+  const crop = state.crops[cropId];
+  if (state.money >= crop.seedPrice) {
+    state.money -= crop.seedPrice;
+    state.inventory[cropId] = (state.inventory[cropId] || 0) + 1;
+    updateDisplay();
+  } else {
+    showNotification("Not enough money!");
+  }
+}
+
+function closePlantingMenu() {
+  const existingMenus = document.querySelectorAll('.planting-menu');
+  existingMenus.forEach(menu => menu.remove());
+}
+
+function handlePlotClick(index) {
+  const plot = state.plots[index];
+  
+  if (plot.status === 'ready') {
+    closePlantingMenu();
+    const crop = state.crops[plot.type];
+    const valueMultiplier = state.activeBuffs.includes('value') ? state.buffs.value.multiplier : 1;
+    const sellPrice = Math.floor(crop.sellPrice * valueMultiplier);
+    
+    state.money += sellPrice;
+    state.xp += crop.xp;
+    plot.status = 'empty';
+    plot.growth = 0;
+    
+    addAchievement(`Harvested ${crop.name} for $${sellPrice}! 💰`);
+    updateDisplay();
+  } else if (plot.status === 'empty') {
+    event.stopPropagation();
+    closePlantingMenu();
+    
+    const menu = document.createElement('div');
+    menu.className = 'absolute inset-0 bg-white bg-opacity-90 p-2 rounded-lg z-10 overflow-y-auto max-h-full';
+    
+    const inventoryItems = Object.entries(state.inventory)
+      .filter(([_, count]) => count > 0)
+      .map(([cropId, count]) => `
+        <button 
+          onclick="plantCropAndCloseMenu('${cropId}', ${index})"
+          class="w-full mb-2 p-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center justify-between"
+        >
+          <span class="flex items-center">
+            ${state.crops[cropId].icon}
+            <span class="ml-2">${state.crops[cropId].name}</span>
+          </span>
+          <span class="text-sm">(${count})</span>
+        </button>
+      `).join('');
+    
+    menu.innerHTML = inventoryItems || '<p class="text-center text-gray-600">No seeds in inventory</p>';
+    
+    const plotEl = document.getElementById('farmGrid').children[index];
+    const existingMenu = plotEl.querySelector('.planting-menu');
+    if (existingMenu) {
+        existingMenu.remove();
+    }
+    menu.classList.add('planting-menu');
+    plotEl.appendChild(menu);
+  }
+}
+
+function plantCrop(cropId, plotIndex) {
+  if (state.inventory[cropId] > 0) {
+    state.inventory[cropId]--;
+    state.plots[plotIndex] = {
+      status: 'growing',
+      type: cropId,
+      growth: 0
+    };
+    addAchievement(`Planted a ${state.crops[cropId].name}! 🌱`);
+    updateDisplay();
+  }
+}
+
+function plantCropAndCloseMenu(cropId, plotIndex) {
+  event.stopPropagation();
+  plantCrop(cropId, plotIndex);
+  closePlantingMenu();
+}
+
+function initGame() {
+  initializeFarm();
+  initializeShop();
+  updateDisplay();
+  startGameLoop();
+  initializeWeatherSystem();
+  
+  const mascotContainer = document.querySelector('.mascot-container');
+  const speechBubble = document.querySelector('.speech-bubble');
+  
+  mascotContainer.addEventListener('click', () => {
+    speechBubble.style.display = speechBubble.style.display === 'none' ? 'block' : 'none';
+  });
+
+  const closeTutorialBtn = document.querySelector('.close-tutorial');
+  closeTutorialBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    speechBubble.style.display = 'none';
+  });
+
+  speechBubble.style.display = 'block';
+  initHotkeys();
+
+  document.addEventListener('click', (e) => {
+    const plotElement = e.target.closest('.plot, .planting-menu');
+    const menuOpen = document.querySelector('.planting-menu');
+    
+    if (!plotElement && menuOpen) {
+      closePlantingMenu();
+    }
+  });
+
+  // Show patch notes
+  showPatchNotes();
+}
+
+function createDraggableWindow(title, content, className) {
+  const window = document.createElement('div');
+  window.className = `draggable-window ${className}`;
+  
+  window.innerHTML = `
+    <div class="window-header">
+      <span>${title}</span>
+      <div class="window-controls">
+        <button class="window-control minimize"></button>
+        <button class="window-control maximize"></button>
+        <button class="window-control close"></button>
+      </div>
+    </div>
+    <div class="window-content">
+      ${content}
+    </div>
+  `;
+
+  // Add event listeners for window controls
+  const controls = window.querySelector('.window-controls');
+  controls.addEventListener('click', (e) => {
+    if (e.target.classList.contains('close')) {
+      window.remove();
+    } else if (e.target.classList.contains('minimize')) {
+      window.classList.toggle('window-minimized');
+    } else if (e.target.classList.contains('maximize')) {
+      window.style.width = window.style.width === '100%' ? '400px' : '100%';
+      window.style.height = window.style.height === '100%' ? '400px' : '100%';
+    }
+  });
+
+  // Make window draggable
+  const header = window.querySelector('.window-header');
+  let isDragging = false;
+  let currentX;
+  let currentY;
+  let initialX;
+  let initialY;
+
+  header.addEventListener('mousedown', dragStart);
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('mouseup', dragEnd);
+
+  function dragStart(e) {
+    initialX = e.clientX - window.offsetLeft;
+    initialY = e.clientY - window.offsetTop;
+    isDragging = true;
+  }
+
+  function drag(e) {
+    if (isDragging) {
+      e.preventDefault();
+      currentX = e.clientX - initialX;
+      currentY = e.clientY - initialY;
+      window.style.left = currentX + 'px';
+      window.style.top = currentY + 'px';
+    }
+  }
+
+  function dragEnd() {
+    isDragging = false;
+  }
+
+  return window;
+}
+
+
+function initHotkeys() {
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'h') {
+      const speechBubble = document.querySelector('.speech-bubble');
+      speechBubble.style.display = speechBubble.style.display === 'none' ? 'block' : 'none';
+    }
+    
+    if (e.key.toLowerCase() === 'p') {
+      const existingPatchNotes = document.querySelector('.patch-notes');
+      if (existingPatchNotes) {
+        existingPatchNotes.remove();
+      } else {
+  
+      showPatchNotes(); // This will now properly toggle patch notes
+      }
+    }
+    
+    if (e.key === 'Escape') {
+      closePlantingMenu();
+      const patchNotes = document.querySelector('.patch-notes');
+      if (patchNotes) {
+        patchNotes.remove();
+      }
+    }
+  });
+}
+
+initGame();
+</script>
+
+</body></html>
